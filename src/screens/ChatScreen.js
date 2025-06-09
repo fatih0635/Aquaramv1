@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, TextInput, Button, FlatList, Text, StyleSheet } from 'react-native';
 import { db } from '../firebase';
-import { ref, push, onValue } from 'firebase/database';
+import { ref, push, onValue, remove } from 'firebase/database';
 
 export default function ChatScreen() {
   const [message, setMessage] = useState('');
@@ -14,6 +14,8 @@ export default function ChatScreen() {
       if (data) {
         const formatted = Object.values(data);
         setMessages(formatted.reverse());
+      } else {
+        setMessages([]); // boşsa listeyi temizle
       }
     });
   }, []);
@@ -25,6 +27,16 @@ export default function ChatScreen() {
       timestamp: Date.now(),
     });
     setMessage('');
+  };
+
+  const resetChat = async () => {
+    try {
+      await remove(ref(db, 'messages/'));
+      alert('🧹 Chat has been cleared.');
+    } catch (error) {
+      console.error('Chat reset failed:', error);
+      alert('❌ Failed to reset chat.');
+    }
   };
 
   return (
@@ -42,6 +54,9 @@ export default function ChatScreen() {
         style={styles.input}
       />
       <Button title="Send" onPress={sendMessage} />
+      <View style={{ marginTop: 12 }}>
+        <Button title="Reset Chat" onPress={resetChat} color="#d32f2f" />
+      </View>
     </View>
   );
 }

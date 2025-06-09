@@ -9,24 +9,27 @@ import WaterStatsScreen from './src/screens/WaterStatsScreen';
 import PlantSelectionScreen from './src/screens/PlantSelectionScreen';
 import AIChatScreen from './src/screens/AIChatScreen';
 import MainMenu from './src/screens/MainMenu';
-import PlantSicknessScreen from './src/screens/PlantSicknessScreen'; // ✅ yeni
+import PlantSicknessScreen from './src/screens/PlantSicknessScreen';
+
+import { ThemeProvider } from './src/ThemeContext'; // 🌗
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    <NavigationContainer>
-      <Stack.Navigator>
-        <Stack.Screen name="Menu" component={MainMenu} />
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="Identify" component={PlantIdentifier} />
-        <Stack.Screen name="Chat" component={ChatScreen} />
-        <Stack.Screen name="WaterStats" component={WaterStatsScreen} />
-        <Stack.Screen name="SelectPlant" component={PlantSelectionScreen} />
-        <Stack.Screen name="ChatBot" component={AIChatScreen} />
-        <Stack.Screen name="PlantSickness" component={PlantSicknessScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <ThemeProvider>
+      <NavigationContainer>
+        <Stack.Navigator>
+          <Stack.Screen name="Menu" component={MainMenu} />
+          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="Identify" component={PlantIdentifier} />
+          <Stack.Screen name="Chat" component={ChatScreen} />
+          <Stack.Screen name="WaterStats" component={WaterStatsScreen} />
+          <Stack.Screen name="SelectPlant" component={PlantSelectionScreen} />
+          <Stack.Screen name="ChatBot" component={AIChatScreen} />
+          <Stack.Screen name="PlantSickness" component={PlantSicknessScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </ThemeProvider>
   );
 }
-

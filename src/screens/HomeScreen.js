@@ -10,6 +10,7 @@ import {
   Platform,
   Image,
   TouchableOpacity,
+  Switch,
 } from 'react-native';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import PlantItem from '../components/PlantItem';
@@ -23,10 +24,12 @@ import {
 } from '../utils/NotificationHelper';
 import { playWaterSound } from '../utils/AudioHelper';
 import { logWatering } from '../utils/FirebaseWaterHelper';
+import { useTheme } from '../ThemeContext';
 
 export default function HomeScreen() {
   const navigation = useNavigation();
   const route = useRoute();
+  const { theme, isDark, toggleTheme } = useTheme();
 
   const [plants, setPlants] = useState([]);
   const [name, setName] = useState('');
@@ -57,8 +60,6 @@ export default function HomeScreen() {
     if (!city) {
       setLastWateredMessage('⚠️ Please enter a city before adding a plant.');
       return;
-    } else {
-      setLastWateredMessage('');
     }
 
     if (temperature === null) {
@@ -119,35 +120,48 @@ export default function HomeScreen() {
     setWaterMessage(
       `🌿 ${plantLabel} in ${city} → Suggest watering ${finalAmount}ml today.`
     );
+
+    logWatering(finalAmount);
   };
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.outerContainer}
+      style={[styles.outerContainer, { backgroundColor: theme.background }]}
     >
-      <Text style={styles.title}>🌱 AquaRam - Smart Plant Care</Text>
+      <View style={styles.headerContainer}>
+        <Text style={[styles.title, { color: theme.text }]}>🌱 AquaRam</Text>
+        <Switch
+          value={isDark}
+          onValueChange={toggleTheme}
+          trackColor={{ false: '#ccc', true: '#81b0ff' }}
+          thumbColor={isDark ? '#f5dd4b' : '#f4f3f4'}
+          style={styles.themeSwitch}
+        />
+      </View>
 
       <View style={styles.inputContainer}>
         <TextInput
           placeholder="Plant Name"
           value={name}
           onChangeText={setName}
-          style={styles.input}
+          placeholderTextColor={theme.text}
+          style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.borderColor }]}
         />
         <TextInput
           placeholder="Room"
           value={room}
           onChangeText={setRoom}
-          style={styles.input}
+          placeholderTextColor={theme.text}
+          style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.borderColor }]}
         />
 
         <View style={styles.row}>
           <TouchableOpacity
-            style={styles.selectButton}
+            style={[styles.selectButton, { backgroundColor: theme.button }]}
             onPress={() => navigation.navigate('SelectPlant')}
           >
-            <Text style={styles.selectButtonText}>
+            <Text style={[styles.selectButtonText, { color: theme.text }]}>
               {selectedPlant ? `🌿 ${selectedPlant.name}` : 'Select Plant'}
             </Text>
           </TouchableOpacity>
@@ -172,7 +186,9 @@ export default function HomeScreen() {
           <PlantItem name={item.name} room={item.room} onDelete={() => deletePlant(item.id)} />
         )}
         ListEmptyComponent={
-          <Text style={styles.emptyText}>No plants yet. Add one above.</Text>
+          <Text style={[styles.emptyText, { color: theme.text }]}>
+            No plants yet. Add one above.
+          </Text>
         }
         contentContainerStyle={
           plants.length === 0 && { flexGrow: 1, justifyContent: 'center' }
@@ -187,26 +203,27 @@ export default function HomeScreen() {
             setCity(text);
             if (text) setLastWateredMessage('');
           }}
-          style={styles.input}
+          placeholderTextColor={theme.text}
+          style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, borderColor: theme.borderColor }]}
         />
         <Button title="Get Water Suggestion" onPress={fetchWeather} />
 
         {weatherIcon && (
           <View style={{ alignItems: 'center', marginTop: 10 }}>
-            <Text style={{ fontSize: 16, fontWeight: 'bold' }}>
+            <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.text }}>
               {city} - {weatherDesc}
             </Text>
             <Image
               source={{ uri: `https://openweathermap.org/img/wn/${weatherIcon}@2x.png` }}
               style={{ width: 80, height: 80 }}
             />
-            <Text style={{ fontSize: 16 }}>{temperature}°C</Text>
+            <Text style={{ fontSize: 16, color: theme.text }}>{temperature}°C</Text>
           </View>
         )}
 
-        {waterMessage ? <Text style={styles.waterMsg}>{waterMessage}</Text> : null}
+        {waterMessage ? <Text style={[styles.waterMsg, { color: theme.text }]}>{waterMessage}</Text> : null}
         {lastWateredMessage ? (
-          <Text style={styles.confirmMsg}>{lastWateredMessage}</Text>
+          <Text style={[styles.confirmMsg, { color: theme.text }]}>{lastWateredMessage}</Text>
         ) : null}
       </View>
     </KeyboardAvoidingView>
@@ -216,37 +233,40 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   outerContainer: {
     flex: 1,
-    backgroundColor: '#f0fff4',
     paddingTop: 50,
     paddingHorizontal: 16,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    position: 'relative',
   },
   title: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#2e7d32',
-    textAlign: 'center',
-    marginBottom: 20,
+  },
+  themeSwitch: {
+    position: 'absolute',
+    right: 0,
   },
   inputContainer: {
     marginBottom: 24,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
     padding: 10,
     marginBottom: 10,
     borderRadius: 6,
-    backgroundColor: '#fff',
   },
   selectButton: {
     flex: 1,
-    backgroundColor: '#c8e6c9',
     padding: 10,
     borderRadius: 6,
   },
   selectButtonText: {
     textAlign: 'center',
-    color: '#2e7d32',
     fontWeight: 'bold',
   },
   deleteButton: {
@@ -269,7 +289,6 @@ const styles = StyleSheet.create({
   emptyText: {
     textAlign: 'center',
     fontSize: 16,
-    color: '#999',
     marginTop: 50,
   },
   weatherContainer: {
@@ -279,13 +298,11 @@ const styles = StyleSheet.create({
   waterMsg: {
     marginTop: 10,
     fontSize: 16,
-    color: '#2e7d32',
     textAlign: 'center',
   },
   confirmMsg: {
     marginTop: 10,
     fontSize: 16,
-    color: '#388e3c',
     textAlign: 'center',
     fontStyle: 'italic',
   },
