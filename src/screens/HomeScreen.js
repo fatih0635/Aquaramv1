@@ -8,7 +8,6 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  Image,
   TouchableOpacity,
   Switch,
 } from 'react-native';
@@ -17,6 +16,7 @@ import PlantItem from '../components/PlantItem';
 import {
   getWeatherByCity,
   calculateWeatherEffect,
+  getWeatherEmoji,
 } from '../utils/WeatherHelper';
 import {
   requestNotificationPermission,
@@ -38,7 +38,6 @@ export default function HomeScreen() {
   const [selectedPlant, setSelectedPlant] = useState(null);
   const [lastWateredMessage, setLastWateredMessage] = useState('');
   const [waterMessage, setWaterMessage] = useState('');
-  const [weatherIcon, setWeatherIcon] = useState('');
   const [weatherDesc, setWeatherDesc] = useState('');
   const [temperature, setTemperature] = useState(null);
 
@@ -108,7 +107,6 @@ export default function HomeScreen() {
       return;
     }
 
-    setWeatherIcon(weather.icon);
     setWeatherDesc(weather.description);
     setTemperature(weather.temp);
 
@@ -208,16 +206,19 @@ export default function HomeScreen() {
         />
         <Button title="Get Water Suggestion" onPress={fetchWeather} />
 
-        {weatherIcon && (
-          <View style={{ alignItems: 'center', marginTop: 10 }}>
+        {weatherDesc && (
+          <View style={{ alignItems: 'center', marginTop: 20 }}>
             <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.text }}>
               {city} - {weatherDesc}
             </Text>
-            <Image
-              source={{ uri: `https://openweathermap.org/img/wn/${weatherIcon}@2x.png` }}
-              style={{ width: 80, height: 80 }}
-            />
-            <Text style={{ fontSize: 16, color: theme.text }}>{temperature}°C</Text>
+
+            <Text style={{ fontSize: 40, marginVertical: 4 }}>
+              {getWeatherEmoji(weatherDesc)}
+            </Text>
+
+            <Text style={{ fontSize: 18, color: theme.text }}>
+              {temperature?.toFixed(2)}°C
+            </Text>
           </View>
         )}
 

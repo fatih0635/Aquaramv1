@@ -1,9 +1,17 @@
 import React, { useState } from 'react';
-import { View, Text, Button, Image, StyleSheet, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  Button,
+  Image,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 
-const PLANT_ID_API_KEY = 'MzZqUVyyEVH48dSRjYgmwwMiNHSriQS9rAsVlipgp6pKJMYTA2';
+const PLANTNET_API_KEY = '2b10qWxRmFdICB5EHcjWwYwQ9e'; // kendi API anahtarın
 
 export default function PlantIdentifier() {
   const [imageUri, setImageUri] = useState(null);
@@ -13,44 +21,60 @@ export default function PlantIdentifier() {
   const pickImage = async () => {
     setResult(null);
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (permission.granted === false) return;
+    if (!permission.granted) {
+      Alert.alert('Permission required', 'Photo access is needed to identify plants.');
+      return;
+    }
 
     const result = await ImagePicker.launchImageLibraryAsync({
       allowsEditing: true,
-      base64: true,
+      quality: 0.8,
+      base64: false,
     });
 
     if (!result.canceled) {
-      setImageUri(result.assets[0].uri);
-      identifyPlant(result.assets[0].base64);
+      const image = result.assets[0];
+      setImageUri(image.uri);
+      identifyPlant(image.uri);
     }
   };
 
-  const identifyPlant = async (base64) => {
+  const identifyPlant = async (uri) => {
     setLoading(true);
-    try {
-      const response = await axios.post('https://api.plant.id/v2/identify', {
-        images: [`data:image/jpeg;base64,${base64}`],
-        organs: ['leaf'],
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Api-Key': PLANT_ID_API_KEY,
-        },
-      });
+    const formData = new FormData();
 
-      const suggestion = response.data?.suggestions?.[0];
-      if (suggestion) {
+    formData.append('images', {
+      uri: uri,
+      name: 'plant.jpg',
+      type: 'image/jpeg',
+    });
+
+    formData.append('organs', 'leaf'); // flower, fruit, bark da olabilir
+
+    try {
+      const response = await axios.post(
+        `https://my-api.plantnet.org/v2/identify/all?api-key=${PLANTNET_API_KEY}`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      const best = response.data?.results?.[0];
+      if (best) {
         setResult({
-          name: suggestion.plant_name,
-          probability: Math.round(suggestion.probability * 100),
+          name: best.species?.scientificNameWithoutAuthor,
+          common: best.species?.commonNames?.[0],
+          score: Math.round(best.score * 100),
         });
       } else {
-        setResult({ name: 'Not Found', probability: 0 });
+        setResult({ name: 'Not Found', score: 0 });
       }
-    } catch (error) {
-      console.error('API Error:', error);
-      setResult({ name: 'Error', probability: 0 });
+    } catch (err) {
+      console.error('PlantNet error:', err.response?.data || err.message);
+      setResult({ name: 'Error', score: 0 });
     } finally {
       setLoading(false);
     }
@@ -64,7 +88,8 @@ export default function PlantIdentifier() {
       {loading && <ActivityIndicator size="large" color="#2e7d32" />}
       {result && (
         <Text style={styles.result}>
-          {result.name} ({result.probability}% match)
+          {result.name}
+          {result.common ? ` (${result.common})` : ''} — {result.score}% match
         </Text>
       )}
     </View>

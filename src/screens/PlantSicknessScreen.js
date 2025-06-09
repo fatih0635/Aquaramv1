@@ -6,11 +6,13 @@ import {
   Image,
   StyleSheet,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 
-const PLANT_ID_API_KEY = 'MzZqUVyyEVH48dSRjYgmwwMiNHSriQS9rAsVlipgp6pKJMYTA2';
+const PLANT_ID_API_KEY = 'yfouCJXVIcVSMHClvh4envid82bzMyo2DEMbpjd2nSkC6uto2k';
+
 
 export default function PlantSicknessScreen() {
   const [imageUri, setImageUri] = useState(null);
@@ -20,31 +22,41 @@ export default function PlantSicknessScreen() {
   const pickImage = async () => {
     setResult(null);
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) return;
+    if (!permission.granted) {
+      Alert.alert('Permission required', 'Allow photo access to detect disease.');
+      return;
+    }
 
     const result = await ImagePicker.launchImageLibraryAsync({
       allowsEditing: true,
-      base64: true,
+      quality: 0.8,
+      base64: false,
     });
 
     if (!result.canceled) {
-      setImageUri(result.assets[0].uri);
-      detectDisease(result.assets[0].base64);
+      const image = result.assets[0];
+      setImageUri(image.uri);
+      detectDisease(image.uri);
     }
   };
 
-  const detectDisease = async (base64) => {
+  const detectDisease = async (uri) => {
     setLoading(true);
+    const formData = new FormData();
+
+    formData.append('images', {
+      uri,
+      type: 'image/jpeg',
+      name: 'leaf.jpg',
+    });
+
     try {
       const response = await axios.post(
         'https://api.plant.id/v2/health_assessment',
-        {
-          images: [`data:image/jpeg;base64,${base64}`],
-          // Optional: add "similar_images": true
-        },
+        formData,
         {
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'multipart/form-data',
             'Api-Key': PLANT_ID_API_KEY,
           },
         }
@@ -55,10 +67,10 @@ export default function PlantSicknessScreen() {
         const main = issues[0];
         setResult(`${main.name} (${Math.round(main.probability * 100)}%)`);
       } else {
-        setResult('Your plant looks healthy!');
+        setResult('🌿 Your plant looks healthy!');
       }
     } catch (error) {
-      console.error('Health API Error:', error);
+      console.error('Health API Error:', error.response?.data || error.message);
       setResult('❌ Failed to detect plant sickness.');
     } finally {
       setLoading(false);

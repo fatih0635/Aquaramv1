@@ -11,7 +11,8 @@ import {
 } from 'react-native';
 import axios from 'axios';
 
-const OPENROUTER_API_KEY = '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';
+const OPENROUTER_API_KEY = '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';
+
 
 export default function AIChatScreen() {
   const [messages, setMessages] = useState([]);
@@ -31,15 +32,14 @@ export default function AIChatScreen() {
       const response = await axios.post(
         'https://openrouter.ai/api/v1/chat/completions',
         {
-          model: 'deepseek/deepseek-r1-0528-qwen3-8b:free',
+          model: 'deepseek/deepseek-r1-0528:free',
           messages: newMessages,
         },
         {
           headers: {
             Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-            'HTTP-Referer': 'https://yourapp.com',
-            'X-Title': 'AquaBot',
             'Content-Type': 'application/json',
+            'X-Title': 'AquaBot',
           },
         }
       );
@@ -47,6 +47,7 @@ export default function AIChatScreen() {
       const reply = response.data.choices[0].message;
       setMessages([...newMessages, reply]);
     } catch (err) {
+      console.log('OpenRouter Hatası:', err.response?.data || err.message);
       const errorMsg =
         err.response?.data?.error?.message || '⚠️ AquaBot error.';
       setMessages([

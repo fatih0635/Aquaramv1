@@ -1,24 +1,20 @@
 import axios from 'axios';
 
-const API_KEY = '2c74306d0f77d2634e4eb2fe4974307d';
-const BASE_URL = 'https://api.openweathermap.org/data/2.5/weather';
+const API_KEY = '1a95a747788ef180540ae6100e98bb05';
 
+// 🌤️ Hava durumu bilgisini getir (Weatherstack)
 export async function getWeatherByCity(city) {
+  const url = `http://api.weatherstack.com/current?access_key=${API_KEY}&query=${encodeURIComponent(city)}`;
+
   try {
-    const response = await axios.get(BASE_URL, {
-      params: {
-        q: city,
-        units: 'metric',
-        appid: API_KEY,
-      },
-    });
+    const response = await axios.get(url);
 
     const data = response.data;
-    const temp = data.main.temp;
-    const humidity = data.main.humidity;
-    const rain = data.rain ? data.rain['1h'] || 0 : 0;
-    const icon = data.weather?.[0]?.icon || '01d';
-    const description = data.weather?.[0]?.description || 'clear sky';
+    const temp = data.current.temperature;
+    const humidity = data.current.humidity;
+    const rain = data.current.precip || 0;
+    const icon = data.current.weather_icons?.[0] || '';
+    const description = data.current.weather_descriptions?.[0] || 'clear sky';
 
     return {
       temp,
@@ -33,7 +29,7 @@ export async function getWeatherByCity(city) {
   }
 }
 
-// 🌦️ Hava durumuna bağlı su önerisi etkisi
+// 💧 Sıcaklık ve yağışa bağlı su ihtiyacı etkisi
 export function calculateWeatherEffect(temp, rain) {
   let modifier = 0;
 
@@ -45,4 +41,18 @@ export function calculateWeatherEffect(temp, rain) {
   if (rain > 0) modifier -= rain * 25;
 
   return modifier;
+}
+
+// 🌤️ Açıklamaya göre emoji döndür
+export function getWeatherEmoji(description) {
+  const desc = description.toLowerCase();
+
+  if (desc.includes('sun') || desc.includes('clear')) return '☀️';
+  if (desc.includes('rain')) return '🌧️';
+  if (desc.includes('cloud')) return '☁️';
+  if (desc.includes('snow')) return '❄️';
+  if (desc.includes('storm') || desc.includes('thunder')) return '⛈️';
+  if (desc.includes('fog') || desc.includes('mist')) return '🌫️';
+
+  return '🔴'; // fallback emoji
 }
