@@ -11,11 +11,9 @@ import {
 } from 'react-native';
 import axios from 'axios';
 
-// ✅ Ana ve Yedek API Anahtarları
-const PRIMARY_KEY = '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';
-const BACKUP_KEY = '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';
-
-let currentKey = PRIMARY_KEY;
+// ✅ OpenRouter API bilgileri
+const API_KEY = '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';
+const MODEL = 'deepseek/deepseek-r1-0528-qwen3-8b:free';
 
 export default function AIChatScreen() {
   const [messages, setMessages] = useState([]);
@@ -30,38 +28,36 @@ export default function AIChatScreen() {
     setMessages(newMessages);
     setInput('');
     setLoading(true);
-
+    console.log('📤 Gönderilen mesajlar (OpenRouter):', newMessages);
+    
     try {
       const response = await axios.post(
         'https://openrouter.ai/api/v1/chat/completions',
         {
-          model: 'deepseek/deepseek-r1-0528-qwen3-8b:free',
+          model: MODEL,
           messages: newMessages,
         },
         {
           headers: {
-            Authorization: `Bearer ${currentKey}`,
+            Authorization: `Bearer ${API_KEY}`,
             'Content-Type': 'application/json',
+            'HTTP-Referer': 'http://localhost:8081',
+            'X-Title': 'Aquaram',
           },
         }
       );
 
       const reply = response.data.choices[0].message;
+      console.log('📥 AquaBot cevabı:', reply);
       setMessages([...newMessages, reply]);
     } catch (err) {
-      if (err.response?.status === 401 && currentKey !== BACKUP_KEY) {
-        console.warn('⛔ Ana key reddedildi. Yedek keye geçiliyor...');
-        currentKey = BACKUP_KEY;
-        sendMessage(); // 🔁 Yeniden dene
-        return;
-      }
-
-      console.log('OpenRouter Hatası:', err.response?.data || err.message);
-      const errorMsg =
-        err.response?.data?.error?.message || '⚠️ AquaBot error.';
+      console.error('❌ Axios error:', err.response?.data || err.message);
       setMessages([
         ...newMessages,
-        { role: 'assistant', content: errorMsg },
+        {
+          role: 'assistant',
+          content: '❌ AquaBot yanıt veremedi. Lütfen daha sonra tekrar deneyin.',
+        },
       ]);
     } finally {
       setLoading(false);
@@ -113,7 +109,7 @@ export default function AIChatScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fff9',
+    backgroundColor: '#f0fff4',
     paddingHorizontal: 16,
     paddingTop: 20,
   },
@@ -121,9 +117,9 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingVertical: 16,
     paddingHorizontal: 12,
-    backgroundColor: '#f0fff4',
+    backgroundColor: '#e8f5e9',
     borderTopWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: '#c8e6c9',
     gap: 10,
   },
   input: {
@@ -141,11 +137,11 @@ const styles = StyleSheet.create({
     maxWidth: '80%',
   },
   user: {
-    backgroundColor: '#e0f7fa',
+    backgroundColor: '#d1f5ff',
     alignSelf: 'flex-end',
   },
   bot: {
-    backgroundColor: '#e8f5e9',
+    backgroundColor: '#f1f8e9',
     alignSelf: 'flex-start',
   },
 });
