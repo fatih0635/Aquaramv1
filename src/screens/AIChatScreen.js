@@ -11,8 +11,11 @@ import {
 } from 'react-native';
 import axios from 'axios';
 
-const OPENROUTER_API_KEY = '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';
+// ✅ Ana ve Yedek API Anahtarları
+const PRIMARY_KEY = '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';
+const BACKUP_KEY = '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';
 
+let currentKey = PRIMARY_KEY;
 
 export default function AIChatScreen() {
   const [messages, setMessages] = useState([]);
@@ -32,14 +35,13 @@ export default function AIChatScreen() {
       const response = await axios.post(
         'https://openrouter.ai/api/v1/chat/completions',
         {
-          model: 'deepseek/deepseek-r1-0528:free',
+          model: 'deepseek/deepseek-r1-0528-qwen3-8b:free',
           messages: newMessages,
         },
         {
           headers: {
-            Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+            Authorization: `Bearer ${currentKey}`,
             'Content-Type': 'application/json',
-            'X-Title': 'AquaBot',
           },
         }
       );
@@ -47,6 +49,13 @@ export default function AIChatScreen() {
       const reply = response.data.choices[0].message;
       setMessages([...newMessages, reply]);
     } catch (err) {
+      if (err.response?.status === 401 && currentKey !== BACKUP_KEY) {
+        console.warn('⛔ Ana key reddedildi. Yedek keye geçiliyor...');
+        currentKey = BACKUP_KEY;
+        sendMessage(); // 🔁 Yeniden dene
+        return;
+      }
+
       console.log('OpenRouter Hatası:', err.response?.data || err.message);
       const errorMsg =
         err.response?.data?.error?.message || '⚠️ AquaBot error.';
