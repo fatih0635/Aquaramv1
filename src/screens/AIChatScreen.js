@@ -12,7 +12,7 @@ import {
 import axios from 'axios';
 
 // ✅ OpenRouter API bilgileri
-const API_KEY = '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';
+const API_KEY = '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';
 const MODEL = 'deepseek/deepseek-r1-0528-qwen3-8b:free';
 
 export default function AIChatScreen() {
